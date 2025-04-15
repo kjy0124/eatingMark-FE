@@ -3,7 +3,7 @@ import RestaurantCard from "./RestaurantCard";
 const LikeCardList = () => {
   return (
     <div>
-      LikeCardList
+      {/* <h3>찜한 맛집</h3> */}
       <RestaurantCard />
     </div>
   );
