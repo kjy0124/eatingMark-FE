@@ -1,12 +1,9 @@
-const RestaurantCard = ({ key, infoRestaurants }) => {
-  const BASE_URL = "http://localhost:3000";
+const RestaurantCard = ({ infoRestaurants }) => {
+  const BASE_URL = import.meta.env.VITE_BASE_URL;
 
-  // console.log(infoRestaurants?.image?.src);
+  // console.log("맛집 사진 : ", infoRestaurants?.image?.src);
   return (
-    <div
-      className="relative cursor-pointer transform transition duration-200 hover:scale-95 bg-[#1e1e1e] border border-[#333] rounded-2xl shadow-xl overflow-hidden"
-      key={key}
-    >
+    <div className="relative cursor-pointer transform transition duration-200 hover:scale-95 bg-[#1e1e1e] border border-[rgb(51,51,51)] rounded-2xl shadow-xl overflow-hidden">
       <img
         src={`${BASE_URL}/${infoRestaurants?.image.src}`}
         alt={infoRestaurants?.image?.alt || "맛집 이미지"}
