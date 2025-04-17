@@ -3,7 +3,12 @@ import Header from "./components/Header";
 import LikeCardList from "./components/LikeCardList";
 import List from "./components/List";
 import SkeletonList from "./components/SkeletonList";
-import { fetchAllRestaurants } from "./api/restaurantAPI";
+import {
+  fetchAllRestaurants,
+  getUserLikes,
+  postUserLike,
+  deleteUserLike,
+} from "./api/restaurantAPI";
 import { sortPlacesByDistance } from "./utils/loc";
 
 import { useEffect, useState } from "react";
@@ -12,10 +17,12 @@ function App() {
   //맛집 데이터를 담을 상태 변수 선언
   const [allRestaurants, setAllRestaurants] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [likedRestaurants, setLikedRestaurants] = useState([]);
 
   //에러처리 상태 변수 선언
   const [errorMessage, setErrorMessage] = useState(null);
 
+  // console.log("allRestaurants : ", allRestaurants);
   useEffect(() => {
     // 브라우저에서 현재 사용자 위치 요청
     navigator.geolocation.getCurrentPosition(
@@ -24,14 +31,19 @@ function App() {
         const { latitude: userLat, longitude: userLon } = position.coords;
 
         // 사용자의 현재 위치를 기준으로 맛집 목록을 거리순으로 정렬
-        const sorted = sortPlacesByDistance(
-          allRestaurants.places,
-          userLat,
-          userLon
-        );
-
-        // 정렬된 데이터를 상태에 저장(장소는 거리순으로 변경됨)
-        setAllRestaurants({ ...allRestaurants, places: sorted });
+        if (
+          allRestaurants &&
+          Array.isArray(allRestaurants.places) &&
+          allRestaurants.places.length > 0
+        ) {
+          const sorted = sortPlacesByDistance(
+            allRestaurants.places,
+            userLat,
+            userLon
+          );
+          // 정렬된 데이터를 상태에 저장(장소는 거리순으로 변경됨)
+          setAllRestaurants({ ...allRestaurants, places: sorted });
+        }
       },
       (error) => {
         console.error("위치 정보를 가져오는 데 실패했습니다.", error);
@@ -97,6 +109,37 @@ function App() {
   }, []);
   // console.log("state :", allRestaurants);
 
+  //찜목록
+  useEffect(() => {
+    const fetchLikes = async () => {
+      try {
+        const data = await getUserLikes();
+        setLikedRestaurants(data.places);
+      } catch (err) {
+        console.error("찜 목록 불러오기 실패!", err);
+      }
+    };
+    fetchLikes();
+  }, []);
+
+  const handleLikeToggle = async (restaurant) => {
+    const isLiked = likedRestaurants.some((item) => item.id === restaurant.id);
+
+    try {
+      if (isLiked) {
+        await deleteUserLike(restaurant.id);
+        setLikedRestaurants((prev) =>
+          prev.filter((item) => item.id !== restaurant.id)
+        );
+      } else {
+        await postUserLike(restaurant);
+        setLikedRestaurants((prev) => [...prev, restaurant]);
+      }
+    } catch (err) {
+      console.error("찜 토글 실패:", err);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#121212] text-gray-200">
       <Header />
@@ -105,7 +148,10 @@ function App() {
           <h3 className="text-xl font-semibold mb-4 text-center text-white">
             ❤️ 찜한 맛집
           </h3>
-          <LikeCardList />
+          <LikeCardList
+            likedRestaurants={likedRestaurants}
+            onToggleLike={handleLikeToggle}
+          />
         </section>
         <section className="bg-[#1e1e1e] p-8 rounded-xl shadow-xl">
           <h2 className="text-xl font-semibold mb-4 text-center text-white">
@@ -120,7 +166,11 @@ function App() {
           {isLoading ? (
             <SkeletonList />
           ) : (
-            <List allRestaurants={allRestaurants} />
+            <List
+              allRestaurants={allRestaurants}
+              likedRestaurants={likedRestaurants}
+              onToggleLike={handleLikeToggle}
+            />
           )}
         </section>
       </main>
